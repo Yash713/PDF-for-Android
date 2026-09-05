@@ -1,0 +1,9 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. The screen content itself is all Jetpack Compose
+         (see presentation/theme/Theme.kt); this only needs to set the window
+         chrome (status bar, splash background) before Compose takes over. -->
+    <style name="Theme.PdfMaster" parent="android:Theme.Material.DayNight.NoActionBar">
+        <item name="android:statusBarColor">@color/pdf_red_700</item>
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
+</resources>

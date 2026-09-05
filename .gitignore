@@ -1,0 +1,14 @@
+*.iml
+.gradle
+/local.properties
+.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# NOTE: gradle.properties holds CLOUDCONVERT_API_KEY. If you fill in a real key,
+# consider moving it to ~/.gradle/gradle.properties (user-level, never committed)
+# instead of leaving it in this project file.

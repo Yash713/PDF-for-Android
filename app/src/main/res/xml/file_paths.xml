@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- CameraX capture targets -->
+    <cache-path name="camera_captures" path="camera/" />
+    <!-- Files the PdfProcessingWorker writes before handing them back via SAF -->
+    <cache-path name="pdf_output" path="pdf_output/" />
+    <external-files-path name="external_files" path="." />
+</paths>

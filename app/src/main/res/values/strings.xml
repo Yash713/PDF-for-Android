@@ -1,0 +1,53 @@
+<resources>
+    <string name="app_name">PDF Master</string>
+
+    <!-- Home -->
+    <string name="section_organize">Organize PDF</string>
+    <string name="section_optimize">Optimize PDF</string>
+    <string name="section_convert">Convert PDF</string>
+    <string name="section_edit">Edit PDF</string>
+    <string name="section_security">PDF Security</string>
+    <string name="section_intelligence">PDF Intelligence</string>
+
+    <string name="feature_merge">Merge</string>
+    <string name="feature_split">Split</string>
+    <string name="feature_organize_pages">Organize Pages</string>
+    <string name="feature_compress">Compress</string>
+    <string name="feature_repair">Repair</string>
+    <string name="feature_pdf_a">PDF/A</string>
+    <string name="feature_pdf_to_word">PDF to Word</string>
+    <string name="feature_pdf_to_ppt">PDF to PowerPoint</string>
+    <string name="feature_pdf_to_excel">PDF to Excel</string>
+    <string name="feature_word_to_pdf">Word to PDF</string>
+    <string name="feature_ppt_to_pdf">PowerPoint to PDF</string>
+    <string name="feature_excel_to_pdf">Excel to PDF</string>
+    <string name="feature_html_to_pdf">HTML to PDF</string>
+    <string name="feature_pdf_to_jpg">PDF to JPG</string>
+    <string name="feature_jpg_to_pdf">JPG to PDF</string>
+    <string name="feature_edit">Edit PDF</string>
+    <string name="feature_watermark">Watermark</string>
+    <string name="feature_rotate">Rotate</string>
+    <string name="feature_page_numbers">Page Numbers</string>
+    <string name="feature_sign">Sign</string>
+    <string name="feature_protect">Protect</string>
+    <string name="feature_unlock">Unlock</string>
+    <string name="feature_scan_ocr">Scan to PDF / OCR</string>
+    <string name="feature_compare">Compare</string>
+
+    <!-- Common actions -->
+    <string name="action_select_files">Select Files</string>
+    <string name="action_merge">Merge</string>
+    <string name="action_compress">Compress</string>
+    <string name="action_convert">Convert</string>
+    <string name="action_scan">Scan</string>
+    <string name="action_choose_from_gallery">Choose from Gallery</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_retry">Retry</string>
+    <string name="coming_soon_title">Coming soon</string>
+    <string name="coming_soon_body">This tool is on the roadmap and isn\'t wired up yet.</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_pdf_processing">PDF Processing</string>
+    <string name="notification_channel_pdf_processing_desc">Shows progress while PDF Master merges, compresses, or converts files</string>
+</resources>

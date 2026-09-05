@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Exclude processed PDFs / scans from auto-backup - they can be large and
+         are user documents the user already owns a copy of via SAF. -->
+    <exclude domain="file" path="pdf_output/" />
+    <exclude domain="file" path="tessdata/" />
+</full-backup-content>
