@@ -1,30 +1,29 @@
 package com.pdfmaster.app.presentation.util
 
-import android.net.Uri
-import android.os.Bundle
-import android.os.ParcelFileDescriptor
-import android.print.PageRange
-import android.print.PrintAttributes
-import android.print.PrintDocumentAdapter
-import android.print.PrintDocumentInfo
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.view.View
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
 import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 /**
- * Drives an already-attached [WebView] through Android's print framework to
- * produce a PDF. All of this must run on the main thread (WebView and
- * PrintDocumentAdapter both require it) - callers are expected to already be
- * on Dispatchers.Main.
+ * Renders HTML/a URL in an already-attached [WebView] and captures the full
+ * (not just on-screen) content as one bitmap.
  *
- * The WebView is expected to be live in the view hierarchy (e.g. hosted by an
- * AndroidView in the caller's Composable) - a WebView that's only constructed
- * and manually sized without ever being attached to a Window risks producing a
- * blank PDF, since its renderer generally needs a real attach/layout pass to
- * have actually drawn anything to capture.
+ * This intentionally does NOT use android.print.PrintDocumentAdapter (the
+ * "real" API for WebView-to-PDF): PrintDocumentAdapter.LayoutResultCallback
+ * and WriteResultCallback both have package-private constructors in the
+ * compiled Android SDK, so only the print framework itself can construct
+ * them - an app can't call adapter.onLayout()/onWrite() directly without
+ * going through the system print dialog (PrintManager.print()), which would
+ * hand control to the OS UI instead of converting in place. Measuring the
+ * WebView to its full content height and calling View.draw() into a bitmap
+ * is the standard workaround, and it feeds directly into the same image-to-
+ * PDF path jpgToPdf already uses (PdfEngine.htmlBitmapToPdf).
  */
 object HtmlToPdfPrinter {
 
@@ -33,31 +32,18 @@ object HtmlToPdfPrinter {
         data class Html(val html: String) : Source()
     }
 
-    suspend fun loadAndPrint(
+    /** Caps memory use on very long pages - about 55 "pages" worth of content at 200dpi. */
+    private const val MAX_CAPTURE_HEIGHT_PX = 16000
+
+    suspend fun loadAndCapture(
         webView: WebView,
         source: Source,
-        outputUri: Uri,
         onProgress: (Float) -> Unit = {}
-    ) {
+    ): Bitmap {
         onProgress(0.05f)
         waitForPageLoad(webView, source)
-        onProgress(0.4f)
-
-        val adapter = webView.createPrintDocumentAdapter("PDF Master export")
-        val attributes = PrintAttributes.Builder()
-            .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
-            .setResolution(PrintAttributes.Resolution("pdf", "pdf", 300, 300))
-            .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
-            .build()
-
-        layoutPrintDocument(adapter, attributes)
-        onProgress(0.7f)
-
-        val context = webView.context
-        val pfd = context.contentResolver.openFileDescriptor(outputUri, "w")
-            ?: error("Could not open output stream")
-        pfd.use { writePrintDocument(adapter, it) }
-        onProgress(1f)
+        onProgress(0.5f)
+        return captureFullPage(webView)
     }
 
     private suspend fun waitForPageLoad(webView: WebView, source: Source) {
@@ -76,46 +62,22 @@ object HtmlToPdfPrinter {
         }
     }
 
-    private suspend fun layoutPrintDocument(adapter: PrintDocumentAdapter, attributes: PrintAttributes) {
-        suspendCancellableCoroutine<Unit> { continuation ->
-            adapter.onLayout(
-                null,
-                attributes,
-                null,
-                object : PrintDocumentAdapter.LayoutResultCallback() {
-                    override fun onLayoutFinished(info: PrintDocumentInfo?, changed: Boolean) {
-                        if (continuation.isActive) continuation.resume(Unit)
-                    }
+    private fun captureFullPage(webView: WebView): Bitmap {
+        val width = webView.width.takeIf { it > 0 } ?: error("WebView has no width - is it attached to the screen?")
 
-                    override fun onLayoutFailed(error: CharSequence?) {
-                        if (continuation.isActive) {
-                            continuation.resumeWithException(IllegalStateException("Layout failed: $error"))
-                        }
-                    }
-                },
-                Bundle()
-            )
-        }
-    }
+        // An UNSPECIFIED height measure spec makes WebView report its full
+        // scrollable content height instead of just the visible viewport.
+        webView.measure(
+            View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        )
+        val fullHeight = webView.measuredHeight.coerceIn(1, MAX_CAPTURE_HEIGHT_PX)
+        webView.layout(0, 0, width, fullHeight)
 
-    private suspend fun writePrintDocument(adapter: PrintDocumentAdapter, destination: ParcelFileDescriptor) {
-        suspendCancellableCoroutine<Unit> { continuation ->
-            adapter.onWrite(
-                arrayOf(PageRange.ALL_PAGES),
-                destination,
-                null,
-                object : PrintDocumentAdapter.WriteResultCallback() {
-                    override fun onWriteFinished(pages: Array<PageRange>?) {
-                        if (continuation.isActive) continuation.resume(Unit)
-                    }
-
-                    override fun onWriteFailed(error: CharSequence?) {
-                        if (continuation.isActive) {
-                            continuation.resumeWithException(IllegalStateException("Write failed: $error"))
-                        }
-                    }
-                }
-            )
-        }
+        val bitmap = Bitmap.createBitmap(width, fullHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(Color.WHITE)
+        webView.draw(canvas)
+        return bitmap
     }
 }

@@ -1,22 +1,29 @@
 package com.pdfmaster.app.presentation.screens.htmlToPdf
 
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.pdfmaster.app.domain.model.Resource
+import com.pdfmaster.app.domain.repository.PdfEngine
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Deliberately thin: the actual conversion drives a WebView that must live in
- * the Composable's view hierarchy (see HtmlToPdfPrinter's doc comment), so
- * HtmlToPdfScreen owns that orchestration and just reports outcomes back here -
- * a ViewModel shouldn't hold a WebView reference past its Composable's lifetime.
+ * The WebView capture step (see HtmlToPdfPrinter) must run from the
+ * Composable, which owns the actual WebView instance - this ViewModel drives
+ * everything else (input state, and finishing the PDF once a bitmap is handed
+ * back to it) so it still owns the terminal Resource state like every other
+ * screen in the app.
  */
 @HiltViewModel
-class HtmlToPdfViewModel @Inject constructor() : ViewModel() {
+class HtmlToPdfViewModel @Inject constructor(
+    private val pdfEngine: PdfEngine
+) : ViewModel() {
 
     private val _useUrl = MutableStateFlow(true)
     val useUrl: StateFlow<Boolean> = _useUrl.asStateFlow()
@@ -35,15 +42,25 @@ class HtmlToPdfViewModel @Inject constructor() : ViewModel() {
         _input.value = value
     }
 
-    fun setLoading(progress: Float) {
-        _state.value = Resource.Loading(progress)
+    fun onCaptureStarted() {
+        _state.value = Resource.Loading(0f)
     }
 
-    fun setResult(outputUri: Uri, result: Result<Unit>) {
-        _state.value = result.fold(
-            onSuccess = { Resource.Success(outputUri) },
-            onFailure = { Resource.Error(it.message ?: "Conversion failed") }
-        )
+    fun onCaptureFailed(message: String) {
+        _state.value = Resource.Error(message)
+    }
+
+    fun convertCapturedBitmap(bitmap: Bitmap, outputUri: Uri) {
+        viewModelScope.launch {
+            _state.value = Resource.Loading(0.5f)
+            val result = pdfEngine.htmlBitmapToPdf(bitmap, outputUri) { progress ->
+                _state.value = Resource.Loading(0.5f + progress * 0.5f)
+            }
+            _state.value = result.fold(
+                onSuccess = { Resource.Success(outputUri) },
+                onFailure = { Resource.Error(it.message ?: "Conversion failed") }
+            )
+        }
     }
 
     fun resetState() {

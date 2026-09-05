@@ -66,14 +66,13 @@ fun HtmlToPdfScreen(onBack: () -> Unit, viewModel: HtmlToPdfViewModel = hiltView
             } else {
                 HtmlToPdfPrinter.Source.Html(input)
             }
-            viewModel.setLoading(0f)
+            viewModel.onCaptureStarted()
             scope.launch {
-                val result = runCatching {
-                    HtmlToPdfPrinter.loadAndPrint(view, source, uri) { progress ->
-                        viewModel.setLoading(progress)
-                    }
-                }
-                viewModel.setResult(uri, result)
+                runCatching { HtmlToPdfPrinter.loadAndCapture(view, source) }
+                    .fold(
+                        onSuccess = { bitmap -> viewModel.convertCapturedBitmap(bitmap, uri) },
+                        onFailure = { viewModel.onCaptureFailed(it.message ?: "Could not render the page") }
+                    )
             }
         }
     }

@@ -719,19 +719,42 @@ class PdfEngineImpl @Inject constructor(
                 imageUris.forEachIndexed { index, uri ->
                     val bitmap = context.contentResolver.openInputStream(uri)?.use(BitmapFactory::decodeStream)
                         ?: error("Could not read image $uri")
-                    val pointsPerPixel = 72f / DEFAULT_IMAGE_DPI
-                    val pageWidth = bitmap.width * pointsPerPixel
-                    val pageHeight = bitmap.height * pointsPerPixel
-                    val page = PDPage(PDRectangle(pageWidth, pageHeight))
-                    document.addPage(page)
-
-                    val image = JPEGFactory.createFromImage(document, bitmap, 0.9f)
-                    PDPageContentStream(document, page).use { stream ->
-                        stream.drawImage(image, 0f, 0f, pageWidth, pageHeight)
-                    }
+                    addImagePage(document, bitmap)
                     bitmap.recycle()
                     onProgress((index + 1f) / imageUris.size)
                 }
+                writeTo(outputUri) { document.save(it) }
+            } finally {
+                document.close()
+            }
+            onProgress(1f)
+        }
+    }
+
+    private fun addImagePage(document: PDDocument, bitmap: Bitmap) {
+        val pointsPerPixel = 72f / DEFAULT_IMAGE_DPI
+        val pageWidth = bitmap.width * pointsPerPixel
+        val pageHeight = bitmap.height * pointsPerPixel
+        val page = PDPage(PDRectangle(pageWidth, pageHeight))
+        document.addPage(page)
+
+        val image = JPEGFactory.createFromImage(document, bitmap, 0.9f)
+        PDPageContentStream(document, page).use { stream ->
+            stream.drawImage(image, 0f, 0f, pageWidth, pageHeight)
+        }
+    }
+
+    override suspend fun htmlBitmapToPdf(
+        bitmap: Bitmap,
+        outputUri: Uri,
+        onProgress: (Float) -> Unit
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            onProgress(0.3f)
+            val document = PDDocument()
+            try {
+                addImagePage(document, bitmap)
+                onProgress(0.7f)
                 writeTo(outputUri) { document.save(it) }
             } finally {
                 document.close()

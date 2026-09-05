@@ -155,6 +155,21 @@ interface PdfEngine {
     ): Result<Unit>
 
     /**
+     * Builds a single-page PDF sized to [bitmap]'s aspect ratio - used by
+     * HTML to PDF, which captures a rendered WebView into one bitmap
+     * (see presentation/util/HtmlToPdfPrinter.kt) rather than driving
+     * android.print.PrintDocumentAdapter directly: its LayoutResultCallback/
+     * WriteResultCallback have package-private constructors in the compiled
+     * SDK, so only the print framework itself can construct them - an app
+     * can't call adapter.onLayout()/onWrite() on its own.
+     */
+    suspend fun htmlBitmapToPdf(
+        bitmap: Bitmap,
+        outputUri: Uri,
+        onProgress: (Float) -> Unit = {}
+    ): Result<Unit>
+
+    /**
      * Best-effort PDF/A compatibility pass - NOT a validator-certified
      * conversion. Removes encryption and any /OpenAction + document-level
      * JavaScript (both disallowed in PDF/A), then writes PDF/A identification

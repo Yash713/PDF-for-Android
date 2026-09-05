@@ -7,7 +7,7 @@ import android.os.Build
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.pdfmaster.app.data.worker.PdfProcessingWorker
-import com.tom_roush.pdfbox.util.PDFBoxResourceLoader
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 

@@ -11,6 +11,7 @@ import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
 import com.tom_roush.pdfbox.pdmodel.common.PDRectangle
 import com.tom_roush.pdfbox.pdmodel.font.PDType1Font
 import com.tom_roush.pdfbox.pdmodel.graphics.image.JPEGFactory
+import com.tom_roush.pdfbox.pdmodel.graphics.state.RenderingMode
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -105,7 +106,7 @@ class TesseractOcrEngine @Inject constructor(
                         val y = pageHeightPt - (word.bottom * pointsPerPixel)
                         runCatching {
                             stream.beginText()
-                            stream.setRenderingMode(PDPageContentStream.RenderingMode.NEITHER)
+                            stream.setRenderingMode(RenderingMode.NEITHER)
                             stream.setFont(PDType1Font.HELVETICA, fontSize)
                             stream.newLineAtOffset(x, y)
                             stream.showText(word.text)
